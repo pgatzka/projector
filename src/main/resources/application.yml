@@ -8,6 +8,16 @@ spring:
     sql-dialect: postgres
   mvc:
     static-path-pattern: /**
+  security:
+    filter:
+      # Spring Security 7 processes all dispatch types (REQUEST, FORWARD, ERROR, ASYNC)
+      # by default. When WelcomePageHandlerMapping or SpaFallbackConfig issues an
+      # internal FORWARD (e.g. "/" → "/index.html"), FilterChainProxy re-wraps the
+      # already-firewalled request in a second FirewalledRequest, causing infinite
+      # recursion in ServletRequestWrapper.getRemoteAddr() → StackOverflowError.
+      # Restricting to REQUEST + ASYNC prevents this without compromising security:
+      # FORWARD dispatches are purely internal MVC routing to already-permitted resources.
+      dispatcher-types: request, async
 
 management:
   endpoints:
