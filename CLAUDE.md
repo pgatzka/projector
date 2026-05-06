@@ -39,6 +39,14 @@ This file is the source of truth for durable conventions in this repo. Read befo
 - **Flyway** for migrations. One SQL statement per file. Filename shape per the database-design skill (`V<n>__create_table_<name>.sql`, etc.).
 - **Whenever working on the database, the `database-design` skill MUST be used.**
 
+## Auth (v0.2 onwards)
+- Single admin account, created via `/api/setup` when account table is empty (returns 409 afterwards)
+- bcrypt password hashing via `PasswordEncoder` bean
+- Spring Security session cookie with 30-day idle timeout (in-memory; lost on restart)
+- CSRF: double-submit cookie (`XSRF-TOKEN` cookie + `X-XSRF-TOKEN` header). `/api/setup`, `/api/login`, `/api/logout` exempt.
+- `ActorContext` reads from `SecurityContextHolder`; `SetupActorOverride` bridges the chicken-and-egg of `/api/setup`
+- `POST /api/login` returns 200 + sets cookie. `POST /api/logout` invalidates session, returns 204. `GET /api/me` returns 200/401.
+
 ## Frontend conventions
 - Vite + React + TypeScript + Tailwind, `src/` rooted at `frontend/`
 - Frontend `package.json` version is kept in lockstep with `pom.xml` via `npm pkg set version=${project.version}` during the Maven `validate` phase.
