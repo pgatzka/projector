@@ -47,6 +47,16 @@ public class AuthSteps {
             .retrieve()
             .toEntity(Map.class);
         captureCookies(entity);
+        // Spring Security 7 sets the CSRF cookie lazily — only when a non-exempt
+        // request causes the token attribute to be read. /api/login is CSRF-exempt,
+        // so its response doesn't include XSRF-TOKEN. Make a GET to /api/me to
+        // prime the cookie (this mirrors what the real SPA's AuthProvider does).
+        ResponseEntity<Map> me = client.get()
+            .uri(url("/api/me"))
+            .header("Cookie", sessionCookie)
+            .retrieve()
+            .toEntity(Map.class);
+        captureCookies(me);
     }
 
     @When("I POST to {string} with body:")
@@ -81,7 +91,8 @@ public class AuthSteps {
 
     @Then("the response body field {string} equals {string}")
     public void responseBodyField(String field, String value) {
-        assertThat(response.getBody()).containsEntry(field, value);
+        Object actual = response.getBody() == null ? null : response.getBody().get(field);
+        assertThat(String.valueOf(actual)).isEqualTo(value);
     }
 
     private void captureCookies(ResponseEntity<?> entity) {
