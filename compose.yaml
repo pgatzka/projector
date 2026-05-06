@@ -1,0 +1,23 @@
+# Consumed by spring-boot-docker-compose during `mvn spring-boot:run`.
+# Postgres connection details are read from the running container — Spring
+# auto-configures spring.datasource.* from POSTGRES_DB/USER/PASSWORD.
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: projector
+      POSTGRES_USER: projector
+      POSTGRES_PASSWORD: projector
+    ports:
+      - "5432:5432"
+    volumes:
+      - projector_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U projector -d projector"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  projector_postgres: {}
