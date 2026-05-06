@@ -8,3 +8,13 @@ spring:
     password: projector_test
   flyway:
     enabled: false
+  security:
+    filter:
+      dispatcher-types: request, async
+
+server:
+  servlet:
+    session:
+      timeout: 30d
+      cookie:
+        secure: false
