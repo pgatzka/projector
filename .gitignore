@@ -1,5 +1,6 @@
 # Build output
 target/
+src/main/resources/static/
 
 # Frontend
 node_modules/
