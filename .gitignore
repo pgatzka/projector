@@ -1,0 +1,25 @@
+# Build output
+target/
+
+# Frontend
+node_modules/
+frontend/dist/
+frontend/.pnpm-debug.log*
+frontend/npm-debug.log*
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Session handoff (per global gitignore convention)
+HANDOFF.md
