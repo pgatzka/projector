@@ -100,4 +100,13 @@ public class AuthSteps {
         }
         sessionCookie = cookieBuilder.toString();
     }
+
+    public int getPort() { return port; }
+    public String getSessionCookie() { return sessionCookie; }
+    public String getCsrfToken() { return csrfToken; }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public void setLastResponse(org.springframework.http.ResponseEntity<?> r) {
+        this.response = (org.springframework.http.ResponseEntity) r;
+    }
 }
