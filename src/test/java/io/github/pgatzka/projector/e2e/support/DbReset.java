@@ -10,7 +10,8 @@ public class DbReset {
     private JdbcTemplate jdbcTemplate;
 
     @Before
-    public void truncateAccount() {
-        jdbcTemplate.execute("truncate table account restart identity cascade");
+    public void truncate() {
+        // Order matters because of FKs; cascade truncates all dependents in one call.
+        jdbcTemplate.execute("truncate table issue, project, account restart identity cascade");
     }
 }
