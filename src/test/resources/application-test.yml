@@ -1,0 +1,10 @@
+spring:
+  docker:
+    compose:
+      enabled: false
+  datasource:
+    url: jdbc:postgresql://localhost:25432/projector_test
+    username: projector_test
+    password: projector_test
+  flyway:
+    enabled: false
