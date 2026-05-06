@@ -40,4 +40,19 @@ public class RestExceptionHandler {
     public ProblemDetail handleEmailExists(EmailAlreadyExistsException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
+
+    @ExceptionHandler(ProjectNotFoundException.class)
+    public ProblemDetail handleProjectNotFound(ProjectNotFoundException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(IssueNotFoundException.class)
+    public ProblemDetail handleIssueNotFound(IssueNotFoundException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(ProjectKeyTakenException.class)
+    public ProblemDetail handleProjectKeyTaken(ProjectKeyTakenException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
 }
