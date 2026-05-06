@@ -12,7 +12,9 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - projector_postgres:/var/lib/postgresql/data
+      # postgres:18+ uses major-version-specific subdirs under /var/lib/postgresql;
+      # mount the parent path (matches the upstream postgres image recommendation).
+      - projector_postgres:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U projector -d projector"]
       interval: 5s
