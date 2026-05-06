@@ -4,7 +4,11 @@ import { SetupPage } from "@/features/auth/SetupPage";
 import { SetupGate } from "@/features/auth/SetupGate";
 import { RequireAuth } from "@/features/auth/RequireAuth";
 import { AppShell } from "@/components/AppShell";
-import { Home } from "@/features/home/Home";
+import { ProjectList } from "@/features/projects/ProjectList";
+import { ProjectForm } from "@/features/projects/ProjectForm";
+import { ProjectHome } from "@/features/projects/ProjectHome";
+import { IssueDetail } from "@/features/issues/IssueDetail";
+import { IssueForm } from "@/features/issues/IssueForm";
 
 export function AppRoutes() {
   return (
@@ -17,8 +21,15 @@ export function AppRoutes() {
           <RequireAuth>
             <AppShell>
               <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
+                <Route path="/" element={<Navigate to="/projects" replace />} />
+                <Route path="/projects" element={<ProjectList />} />
+                <Route path="/projects/new" element={<ProjectForm mode="create" />} />
+                <Route path="/projects/:key" element={<ProjectHome />} />
+                <Route path="/projects/:key/edit" element={<ProjectForm mode="edit" />} />
+                <Route path="/projects/:key/issues/new" element={<IssueForm mode="create" />} />
+                <Route path="/projects/:key/issues/:number" element={<IssueDetail />} />
+                <Route path="/projects/:key/issues/:number/edit" element={<IssueForm mode="edit" />} />
+                <Route path="*" element={<Navigate to="/projects" replace />} />
               </Routes>
             </AppShell>
           </RequireAuth>

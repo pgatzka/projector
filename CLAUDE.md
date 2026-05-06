@@ -47,6 +47,19 @@ This file is the source of truth for durable conventions in this repo. Read befo
 - `ActorContext` reads from `SecurityContextHolder`; `SetupActorOverride` bridges the chicken-and-egg of `/api/setup`
 - `POST /api/login` returns 200 + sets cookie. `POST /api/logout` invalidates session, returns 204. `GET /api/me` returns 200/401.
 
+## Projects + Issues (v0.3 onwards)
+- `project.key` is 2–10 uppercase letters, must start with a letter; unique. Validated app-side.
+- Issue identifier is `<project.key>-<issue.number>`. `issue.number` is per-project, claimed via row-locked increment of `project.next_issue_number` inside the create transaction.
+- Status enum: `backlog`, `todo`, `in_progress`, `done`, `cancelled` (Postgres native enum `issue_status`)
+- Priority enum: `low`, `medium`, `high`, `urgent` (Postgres native enum `issue_priority`)
+- Hard delete with `on delete cascade`: deleting a project deletes its issues; deleting an issue cascades v0.4 labels and v0.5 comments/activity.
+- REST: `/api/projects` (list/create), `/api/projects/{key}` (get/patch/delete), `/api/projects/{key}/issues` (list/create), `/api/projects/{key}/issues/{number}` (get/patch/delete).
+- Frontend routes: `/projects`, `/projects/new`, `/projects/{KEY}`, `/projects/{KEY}/edit`, `/projects/{KEY}/issues/new`, `/projects/{KEY}/issues/{N}`, `/projects/{KEY}/issues/{N}/edit`.
+- Issue list default sort: `number desc` (newest first).
+- Save model: explicit Save button. PATCH with non-null fields only. Activity log (v0.5) writes one row per save.
+- v0.3 renders issue description as `<pre>` markdown text. Real markdown rendering arrives in v0.5 with comments.
+- CSRF cookie: a `CsrfCookieFilter` (in `config/`) materializes the XSRF-TOKEN cookie eagerly on every response. Required for SS6+/7's deferred token loading; without it, the SPA would never receive a token after login (login is CSRF-exempt).
+
 ## Frontend conventions
 - Vite + React + TypeScript + Tailwind, `src/` rooted at `frontend/`
 - Frontend `package.json` version is kept in lockstep with `pom.xml` via `npm pkg set version=${project.version}` during the Maven `validate` phase.

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { LogoutButton } from "@/features/auth/LogoutButton";
 
@@ -7,8 +8,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-full bg-slate-50 text-slate-900">
       <header className="border-b border-slate-200 bg-white px-6 py-4 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold">Projector</h1>
-          <p className="text-sm text-slate-500">v0.2 auth</p>
+          <Link to="/projects" className="text-xl font-semibold">Projector</Link>
+          <p className="text-sm text-slate-500">v0.3 projects + issues</p>
         </div>
         {me && (
           <div className="flex items-center gap-3">
