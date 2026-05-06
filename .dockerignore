@@ -1,0 +1,5 @@
+# Everything by default
+*
+
+# Allow only the jar
+!target/projector-*.jar
