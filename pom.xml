@@ -1,0 +1,447 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>4.0.6</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>io.github.pgatzka</groupId>
+  <artifactId>projector</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <name>projector</name>
+  <description>Solo issue tracker</description>
+
+  <properties>
+    <java.version>21</java.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+    <!-- Plugin / dependency versions not managed by spring-boot-starter-parent -->
+    <docker-maven-plugin.version>0.48.1</docker-maven-plugin.version>
+    <frontend-maven-plugin.version>1.15.1</frontend-maven-plugin.version>
+    <springdoc.version>2.7.0</springdoc.version>
+    <jacoco.version>0.8.13</jacoco.version>
+    <node.version>v22.11.0</node.version>
+
+    <!-- Codegen Postgres (used during generate-sources) -->
+    <codegen.database>projector_codegen</codegen.database>
+    <codegen.port>15432</codegen.port>
+    <codegen.user>projector_codegen</codegen.user>
+    <codegen.password>projector_codegen</codegen.password>
+    <codegen.host>localhost</codegen.host>
+    <codegen.url>jdbc:postgresql://${codegen.host}:${codegen.port}/${codegen.database}</codegen.url>
+
+    <!-- Test Postgres (used during integration-test) -->
+    <test.database>projector_test</test.database>
+    <test.port>25432</test.port>
+    <test.user>projector_test</test.user>
+    <test.password>projector_test</test.password>
+    <test.host>localhost</test.host>
+    <test.url>jdbc:postgresql://${test.host}:${test.port}/${test.database}</test.url>
+  </properties>
+
+  <dependencies>
+    <!-- Web (Spring MVC) -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webmvc</artifactId>
+    </dependency>
+
+    <!-- Security -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+
+    <!-- Validation -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+
+    <!-- Actuator + Prometheus -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+    </dependency>
+
+    <!-- jOOQ + datasource -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-jooq</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- Flyway -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-flyway</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-database-postgresql</artifactId>
+    </dependency>
+
+    <!-- spring-boot-docker-compose: auto-starts compose.yaml in dev -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-docker-compose</artifactId>
+      <scope>runtime</scope>
+      <optional>true</optional>
+    </dependency>
+
+    <!-- OpenAPI (springdoc) -->
+    <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+      <version>${springdoc.version}</version>
+    </dependency>
+
+    <!-- ============================================================== -->
+    <!-- Test                                                              -->
+    <!-- ============================================================== -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Cucumber -->
+    <dependency>
+      <groupId>io.cucumber</groupId>
+      <artifactId>cucumber-java</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.cucumber</groupId>
+      <artifactId>cucumber-spring</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.cucumber</groupId>
+      <artifactId>cucumber-junit-platform-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-suite</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.cucumber</groupId>
+        <artifactId>cucumber-bom</artifactId>
+        <version>7.20.1</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <plugins>
+      <!-- Spring Boot fat jar -->
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+
+      <!-- Surefire: unit tests (*Test.java), Spring-context-free -->
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <includes>
+            <include>**/*Test.java</include>
+          </includes>
+        </configuration>
+      </plugin>
+
+      <!-- Failsafe: integration tests (*IT.java), Cucumber against test Postgres -->
+      <plugin>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <configuration>
+          <includes>
+            <include>**/*IT.java</include>
+          </includes>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- JaCoCo: coverage report -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco.version}</version>
+        <executions>
+          <execution>
+            <id>prepare-agent</id>
+            <goals><goal>prepare-agent</goal></goals>
+          </execution>
+          <execution>
+            <id>prepare-agent-integration</id>
+            <goals><goal>prepare-agent-integration</goal></goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>verify</phase>
+            <goals><goal>report</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- ===================================================== -->
+      <!-- Frontend build (frontend-maven-plugin)                  -->
+      <!-- ===================================================== -->
+      <plugin>
+        <groupId>com.github.eirslett</groupId>
+        <artifactId>frontend-maven-plugin</artifactId>
+        <version>${frontend-maven-plugin.version}</version>
+        <configuration>
+          <workingDirectory>frontend</workingDirectory>
+          <installDirectory>target</installDirectory>
+        </configuration>
+        <executions>
+          <execution>
+            <id>install-node-and-npm</id>
+            <goals><goal>install-node-and-npm</goal></goals>
+            <phase>validate</phase>
+            <configuration>
+              <nodeVersion>${node.version}</nodeVersion>
+            </configuration>
+          </execution>
+          <execution>
+            <id>sync-frontend-version</id>
+            <goals><goal>npm</goal></goals>
+            <phase>validate</phase>
+            <configuration>
+              <arguments>pkg set version=${project.version}</arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>frontend-install</id>
+            <goals><goal>npm</goal></goals>
+            <phase>generate-resources</phase>
+            <configuration>
+              <arguments>install</arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>frontend-build</id>
+            <goals><goal>npm</goal></goals>
+            <phase>generate-resources</phase>
+            <configuration>
+              <arguments>run build</arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- ===================================================== -->
+      <!-- Codegen + test Postgres (docker-maven-plugin)           -->
+      <!-- ===================================================== -->
+      <plugin>
+        <groupId>io.fabric8</groupId>
+        <artifactId>docker-maven-plugin</artifactId>
+        <version>${docker-maven-plugin.version}</version>
+        <configuration>
+          <volumes>
+            <volume><name>projector-codegen_postgres</name></volume>
+            <volume><name>projector-test_postgres</name></volume>
+          </volumes>
+          <removeVolumes>true</removeVolumes>
+          <images>
+            <image>
+              <alias>postgres_codegen</alias>
+              <name>postgres:18-alpine</name>
+              <run>
+                <containerNamePattern>projector-codegen_postgres</containerNamePattern>
+                <env>
+                  <POSTGRES_DB>${codegen.database}</POSTGRES_DB>
+                  <POSTGRES_USER>${codegen.user}</POSTGRES_USER>
+                  <POSTGRES_PASSWORD>${codegen.password}</POSTGRES_PASSWORD>
+                </env>
+                <ports>
+                  <port>${codegen.port}:5432</port>
+                </ports>
+                <volumes>
+                  <bind>
+                    <volume>projector-codegen_postgres:/var/lib/postgresql</volume>
+                  </bind>
+                </volumes>
+                <wait>
+                  <log>listening on IPv4 address</log>
+                  <time>30000</time>
+                </wait>
+              </run>
+            </image>
+            <image>
+              <alias>postgres_test</alias>
+              <name>postgres:18-alpine</name>
+              <run>
+                <containerNamePattern>projector-test_postgres</containerNamePattern>
+                <env>
+                  <POSTGRES_DB>${test.database}</POSTGRES_DB>
+                  <POSTGRES_USER>${test.user}</POSTGRES_USER>
+                  <POSTGRES_PASSWORD>${test.password}</POSTGRES_PASSWORD>
+                </env>
+                <ports>
+                  <port>${test.port}:5432</port>
+                </ports>
+                <volumes>
+                  <bind>
+                    <volume>projector-test_postgres:/var/lib/postgresql</volume>
+                  </bind>
+                </volumes>
+                <wait>
+                  <log>listening on IPv4 address</log>
+                  <time>30000</time>
+                </wait>
+              </run>
+            </image>
+          </images>
+        </configuration>
+        <executions>
+          <execution>
+            <id>start-codegen-database</id>
+            <phase>initialize</phase>
+            <goals><goal>stop</goal><goal>start</goal></goals>
+            <configuration><filter>postgres_codegen</filter></configuration>
+          </execution>
+          <execution>
+            <id>stop-codegen-database</id>
+            <phase>process-sources</phase>
+            <goals><goal>stop</goal></goals>
+            <configuration><filter>postgres_codegen</filter></configuration>
+          </execution>
+          <execution>
+            <id>start-test-database</id>
+            <phase>pre-integration-test</phase>
+            <goals><goal>stop</goal><goal>start</goal></goals>
+            <configuration><filter>postgres_test</filter></configuration>
+          </execution>
+          <execution>
+            <id>stop-test-database</id>
+            <phase>post-integration-test</phase>
+            <goals><goal>stop</goal></goals>
+            <configuration><filter>postgres_test</filter></configuration>
+          </execution>
+          <execution>
+            <id>remove-containers</id>
+            <phase>clean</phase>
+            <goals><goal>remove</goal></goals>
+          </execution>
+          <execution>
+            <id>remove-volumes</id>
+            <phase>clean</phase>
+            <goals><goal>volume-remove</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- ===================================================== -->
+      <!-- Flyway: migrate codegen + test databases                -->
+      <!-- ===================================================== -->
+      <plugin>
+        <groupId>org.flywaydb</groupId>
+        <artifactId>flyway-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>migrate-codegen-database</id>
+            <phase>generate-sources</phase>
+            <goals><goal>migrate</goal></goals>
+            <configuration>
+              <url>${codegen.url}</url>
+              <user>${codegen.user}</user>
+              <password>${codegen.password}</password>
+            </configuration>
+          </execution>
+          <execution>
+            <id>migrate-test-database</id>
+            <phase>pre-integration-test</phase>
+            <goals><goal>migrate</goal></goals>
+            <configuration>
+              <url>${test.url}</url>
+              <user>${test.user}</user>
+              <password>${test.password}</password>
+            </configuration>
+          </execution>
+        </executions>
+        <dependencies>
+          <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+            <version>${flyway.version}</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+
+      <!-- ===================================================== -->
+      <!-- jOOQ codegen                                            -->
+      <!-- ===================================================== -->
+      <plugin>
+        <groupId>org.jooq</groupId>
+        <artifactId>jooq-codegen-maven</artifactId>
+        <configuration>
+          <jdbc>
+            <url>${codegen.url}</url>
+            <user>${codegen.user}</user>
+            <password>${codegen.password}</password>
+          </jdbc>
+          <generator>
+            <database>
+              <name>org.jooq.meta.postgres.PostgresDatabase</name>
+              <inputSchema>public</inputSchema>
+              <excludes>flyway_schema_history</excludes>
+              <catalogVersionProvider>select max(version) from flyway_schema_history</catalogVersionProvider>
+              <schemaVersionProvider>select max(version) from flyway_schema_history</schemaVersionProvider>
+            </database>
+            <generate>
+              <pojos>true</pojos>
+              <fluentSetters>true</fluentSetters>
+            </generate>
+            <target>
+              <packageName>io.github.pgatzka.projector.jooq</packageName>
+              <directory>${project.build.directory}/generated-sources/jooq</directory>
+            </target>
+          </generator>
+        </configuration>
+        <executions>
+          <execution>
+            <id>codegen-generate-code</id>
+            <phase>generate-sources</phase>
+            <goals><goal>generate</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
