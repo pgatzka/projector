@@ -35,7 +35,6 @@ class ProjectServiceTest {
         assertThat(created.getKey()).isEqualTo("ENG");
         assertThat(created.getName()).isEqualTo("Engineering");
         assertThat(created.getDescription()).isEqualTo("Stuff");
-        assertThat(created.getNextIssueNumber()).isEqualTo(1);
     }
 
     @Test

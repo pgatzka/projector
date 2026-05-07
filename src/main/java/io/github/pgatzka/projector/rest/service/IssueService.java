@@ -91,14 +91,24 @@ public class IssueService {
         Issue created = issueData.create(issue);
         activityService.emit(created.getId(), ActivityAction.issue_created, Map.of());
         if (req.labelIds() != null && !req.labelIds().isEmpty()) {
+            LinkedHashMap<UUID, Label> labels = new LinkedHashMap<>();
             for (UUID labelId : req.labelIds()) {
                 Label l = labelData.findById(labelId)
                     .orElseThrow(() -> new LabelNotFoundException(labelId));
                 if (!l.getProjectId().equals(project.getId())) {
                     throw new LabelNotInProjectException(labelId, projectKey);
                 }
+                labels.put(labelId, l);
             }
             issueLabelData.bulkAssign(created.getId(), req.labelIds());
+            for (Map.Entry<UUID, Label> entry : labels.entrySet()) {
+                Label l = entry.getValue();
+                Map<String, Object> payload = new LinkedHashMap<>();
+                payload.put("labelId", l.getId() == null ? null : l.getId().toString());
+                payload.put("labelName", l.getName());
+                payload.put("labelColor", l.getColor() == null ? null : l.getColor().name());
+                activityService.emit(created.getId(), ActivityAction.label_added, payload);
+            }
         }
         return created;
     }

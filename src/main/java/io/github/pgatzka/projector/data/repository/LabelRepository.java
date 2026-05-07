@@ -41,12 +41,14 @@ public class LabelRepository {
     public Label insert(Label label) {
         LabelRecord record = dsl.newRecord(LABEL, label);
         record.store();
+        record.refresh();
         return record.into(Label.class);
     }
 
     public Label update(Label label) {
         LabelRecord record = dsl.newRecord(LABEL, label);
         record.update();
+        record.refresh();
         return record.into(Label.class);
     }
 

@@ -28,6 +28,11 @@ public class SetupService {
      * Uses SERIALIZABLE so a concurrent setup attempt can't race past the count.
      * In practice contention is zero for a solo tool, but the invariant is cheap to enforce.
      */
+    @Transactional(readOnly = true)
+    public boolean isRequired() {
+        return accountDataService.countAll() == 0;
+    }
+
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public Account completeSetup(SetupRequest request) {
         if (accountDataService.countAll() > 0) {

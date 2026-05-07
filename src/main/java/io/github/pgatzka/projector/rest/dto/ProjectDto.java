@@ -10,14 +10,13 @@ public record ProjectDto(
     String key,
     String name,
     String description,
-    int nextIssueNumber,
     OffsetDateTime createdAt,
     OffsetDateTime updatedAt
 ) {
     public static ProjectDto of(Project p) {
         return new ProjectDto(
             p.getId(), p.getKey(), p.getName(), p.getDescription(),
-            p.getNextIssueNumber(), p.getCreatedAt(), p.getUpdatedAt()
+            p.getCreatedAt(), p.getUpdatedAt()
         );
     }
 }

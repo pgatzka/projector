@@ -133,7 +133,7 @@ export function KanbanBoard() {
       </div>
 
       <div className="hidden space-y-4 rounded border border-slate-200 bg-white p-4 md:block">
-        <IssueListFilters projectKey={key!} query={query} onChange={setQuery} />
+        <IssueListFilters projectKey={key!} query={query} onChange={setQuery} hideStatus />
 
         {board.isLoading ? (
           <p className="text-sm text-slate-500">Loading issues…</p>

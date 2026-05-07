@@ -24,3 +24,7 @@ Thumbs.db
 
 # Session handoff (per global gitignore convention)
 HANDOFF.md
+
+# Playwright MCP test artifacts (local dev only)
+.playwright-mcp/
+snap-*.yml

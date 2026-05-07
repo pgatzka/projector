@@ -7,10 +7,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-full bg-slate-50 text-slate-900">
       <header className="border-b border-slate-200 bg-white px-6 py-4 flex items-center justify-between">
-        <div>
-          <Link to="/projects" className="text-xl font-semibold">Projector</Link>
-          <p className="text-sm text-slate-500">v0.3 projects + issues</p>
-        </div>
+        <Link to="/projects" className="text-xl font-semibold">Projector</Link>
         {me && (
           <div className="flex items-center gap-3">
             <span className="text-sm text-slate-600">{me.displayName}</span>

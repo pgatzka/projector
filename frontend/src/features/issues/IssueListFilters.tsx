@@ -152,10 +152,12 @@ export function IssueListFilters({
   projectKey,
   query,
   onChange,
+  hideStatus = false,
 }: {
   projectKey: string;
   query: IssueListQuery;
   onChange: (q: IssueListQuery) => void;
+  hideStatus?: boolean;
 }) {
   const [searchInput, setSearchInput] = useState(query.q ?? "");
 
@@ -186,13 +188,15 @@ export function IssueListFilters({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <MultiSelectDropdown
-        label="Status"
-        options={STATUSES}
-        selected={query.status ?? []}
-        onChange={setStatus}
-        renderOption={(s) => <span className="text-sm">{STATUS_LABELS[s]}</span>}
-      />
+      {!hideStatus && (
+        <MultiSelectDropdown
+          label="Status"
+          options={STATUSES}
+          selected={query.status ?? []}
+          onChange={setStatus}
+          renderOption={(s) => <span className="text-sm">{STATUS_LABELS[s]}</span>}
+        />
+      )}
       <MultiSelectDropdown
         label="Priority"
         options={PRIORITIES}

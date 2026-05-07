@@ -41,12 +41,14 @@ public class ProjectRepository {
     public Project insert(Project project) {
         ProjectRecord record = dsl.newRecord(PROJECT, project);
         record.store();
+        record.refresh();
         return record.into(Project.class);
     }
 
     public Project update(Project project) {
         ProjectRecord record = dsl.newRecord(PROJECT, project);
         record.update();
+        record.refresh();
         return record.into(Project.class);
     }
 

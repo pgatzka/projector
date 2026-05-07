@@ -7,13 +7,14 @@ import io.github.pgatzka.projector.rest.service.SetupService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 @RestController
-@RequestMapping("/api/setup")
 public class SetupController {
 
     private final SetupService setupService;
@@ -22,9 +23,14 @@ public class SetupController {
         this.setupService = setupService;
     }
 
-    @PostMapping
+    @PostMapping("/api/setup")
     public ResponseEntity<MeResponse> setup(@Valid @RequestBody SetupRequest request) {
         Account created = setupService.completeSetup(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(MeResponse.of(created));
+    }
+
+    @GetMapping("/api/setup-required")
+    public Map<String, Boolean> setupRequired() {
+        return Map.of("required", setupService.isRequired());
     }
 }

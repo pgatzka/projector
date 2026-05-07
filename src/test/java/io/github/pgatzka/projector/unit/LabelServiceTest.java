@@ -1,6 +1,8 @@
 package io.github.pgatzka.projector.unit;
 
+import io.github.pgatzka.projector.data.service.IssueLabelDataService;
 import io.github.pgatzka.projector.data.service.LabelDataService;
+import io.github.pgatzka.projector.jooq.enums.ActivityAction;
 import io.github.pgatzka.projector.jooq.enums.LabelColor;
 import io.github.pgatzka.projector.jooq.tables.pojos.Label;
 import io.github.pgatzka.projector.jooq.tables.pojos.Project;
@@ -8,11 +10,16 @@ import io.github.pgatzka.projector.rest.dto.CreateLabelRequest;
 import io.github.pgatzka.projector.rest.dto.UpdateLabelRequest;
 import io.github.pgatzka.projector.rest.exception.LabelNameTakenException;
 import io.github.pgatzka.projector.rest.exception.LabelNotFoundException;
+import io.github.pgatzka.projector.rest.service.ActivityService;
 import io.github.pgatzka.projector.rest.service.LabelService;
 import io.github.pgatzka.projector.rest.service.ProjectService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -20,7 +27,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class LabelServiceTest {
@@ -29,14 +39,18 @@ class LabelServiceTest {
     private static final String PROJECT_KEY = "ENG";
 
     private LabelDataService data;
+    private IssueLabelDataService issueLabelData;
+    private ActivityService activityService;
     private ProjectService projectService;
     private LabelService service;
 
     @BeforeEach
     void setUp() {
         data = mock(LabelDataService.class);
+        issueLabelData = mock(IssueLabelDataService.class);
         projectService = mock(ProjectService.class);
-        service = new LabelService(data, projectService);
+        activityService = mock(ActivityService.class);
+        service = new LabelService(data, issueLabelData, projectService, activityService);
 
         Project project = new Project();
         project.setId(PROJECT_ID);
@@ -120,5 +134,54 @@ class LabelServiceTest {
 
         assertThatThrownBy(() -> service.findById(PROJECT_KEY, labelId))
             .isInstanceOf(LabelNotFoundException.class);
+    }
+
+    @Test
+    void delete_emitsLabelRemovedPerAssignedIssue() {
+        UUID labelId = UUID.randomUUID();
+        Label label = new Label();
+        label.setId(labelId);
+        label.setProjectId(PROJECT_ID);
+        label.setName("obsolete");
+        label.setColor(LabelColor.gray);
+        when(data.findById(labelId)).thenReturn(Optional.of(label));
+
+        UUID issue1Id = UUID.randomUUID();
+        UUID issue2Id = UUID.randomUUID();
+        UUID issue3Id = UUID.randomUUID();
+        when(issueLabelData.findIssueIdsByLabelId(labelId))
+            .thenReturn(List.of(issue1Id, issue2Id, issue3Id));
+
+        service.delete(PROJECT_KEY, labelId);
+
+        verify(activityService, times(3))
+            .emit(any(UUID.class), eq(ActivityAction.label_removed), any());
+        verify(activityService)
+            .emit(eq(issue1Id), eq(ActivityAction.label_removed), any());
+        verify(activityService)
+            .emit(eq(issue2Id), eq(ActivityAction.label_removed), any());
+        verify(activityService)
+            .emit(eq(issue3Id), eq(ActivityAction.label_removed), any());
+    }
+
+    @Test
+    void delete_emitsBeforeDataLayerDelete() {
+        UUID labelId = UUID.randomUUID();
+        Label label = new Label();
+        label.setId(labelId);
+        label.setProjectId(PROJECT_ID);
+        label.setName("obsolete");
+        label.setColor(LabelColor.gray);
+        when(data.findById(labelId)).thenReturn(Optional.of(label));
+
+        UUID issue1Id = UUID.randomUUID();
+        when(issueLabelData.findIssueIdsByLabelId(labelId))
+            .thenReturn(List.of(issue1Id));
+
+        service.delete(PROJECT_KEY, labelId);
+
+        InOrder order = inOrder(activityService, data);
+        order.verify(activityService).emit(any(UUID.class), eq(ActivityAction.label_removed), any());
+        order.verify(data).deleteById(labelId);
     }
 }

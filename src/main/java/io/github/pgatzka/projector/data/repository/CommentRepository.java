@@ -23,6 +23,7 @@ public class CommentRepository {
         CommentRecord record = dsl.newRecord(COMMENT, comment);
         record.changed(COMMENT.SEARCH_TSV, false);
         record.store();
+        record.refresh();
         return record.into(Comment.class);
     }
 

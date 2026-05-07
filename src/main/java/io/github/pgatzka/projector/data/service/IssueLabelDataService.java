@@ -30,6 +30,11 @@ public class IssueLabelDataService {
     @Transactional(readOnly = true)
     public int countByLabelId(UUID labelId) { return repository.countByLabelId(labelId); }
 
+    @Transactional(readOnly = true)
+    public List<UUID> findIssueIdsByLabelId(UUID labelId) {
+        return repository.findIssueIdsByLabelId(labelId);
+    }
+
     public IssueLabel assign(UUID issueId, UUID labelId) {
         IssueLabel il = new IssueLabel();
         il.setIssueId(issueId);

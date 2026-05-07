@@ -19,6 +19,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -163,6 +164,92 @@ class IssueServiceActivityTest {
         i.setStatus(IssueStatus.todo);
         i.setPriority(IssuePriority.medium);
         return i;
+    }
+
+    @Test
+    void create_withSingleLabel_emitsIssueCreatedThenLabelAdded() {
+        UUID labelId = UUID.randomUUID();
+        Project project = new Project();
+        project.setId(projectId);
+        project.setKey(KEY);
+        when(projectData.findByKey(KEY)).thenReturn(Optional.of(project));
+        when(projectData.claimNextIssueNumber(projectId)).thenReturn(1);
+        when(issueData.create(any(Issue.class))).thenAnswer(inv -> {
+            Issue arg = inv.getArgument(0);
+            arg.setId(issueId);
+            return arg;
+        });
+        when(labelData.findById(labelId)).thenAnswer(inv -> {
+            var label = new io.github.pgatzka.projector.jooq.tables.pojos.Label();
+            label.setId(labelId);
+            label.setProjectId(projectId);
+            label.setName("bug");
+            label.setColor(io.github.pgatzka.projector.jooq.enums.LabelColor.red);
+            return Optional.of(label);
+        });
+
+        service.create(KEY, new CreateIssueRequest("hello", null, null, null, null, List.of(labelId)));
+
+        InOrder order = inOrder(activityService);
+        ArgumentCaptor<Map<String, Object>> payload1 = payloadCaptor();
+        order.verify(activityService).emit(eq(issueId), eq(ActivityAction.issue_created), payload1.capture());
+        ArgumentCaptor<Map<String, Object>> payload2 = payloadCaptor();
+        order.verify(activityService).emit(eq(issueId), eq(ActivityAction.label_added), payload2.capture());
+        verify(activityService, times(2)).emit(eq(issueId), any(ActivityAction.class), any());
+    }
+
+    @Test
+    void create_withMultipleLabels_emitsLabelAddedInOrder() {
+        UUID label1Id = UUID.randomUUID();
+        UUID label2Id = UUID.randomUUID();
+        UUID label3Id = UUID.randomUUID();
+        Project project = new Project();
+        project.setId(projectId);
+        project.setKey(KEY);
+        when(projectData.findByKey(KEY)).thenReturn(Optional.of(project));
+        when(projectData.claimNextIssueNumber(projectId)).thenReturn(1);
+        when(issueData.create(any(Issue.class))).thenAnswer(inv -> {
+            Issue arg = inv.getArgument(0);
+            arg.setId(issueId);
+            return arg;
+        });
+        when(labelData.findById(label1Id)).thenAnswer(inv -> {
+            var label = new io.github.pgatzka.projector.jooq.tables.pojos.Label();
+            label.setId(label1Id);
+            label.setProjectId(projectId);
+            label.setName("bug");
+            label.setColor(io.github.pgatzka.projector.jooq.enums.LabelColor.red);
+            return Optional.of(label);
+        });
+        when(labelData.findById(label2Id)).thenAnswer(inv -> {
+            var label = new io.github.pgatzka.projector.jooq.tables.pojos.Label();
+            label.setId(label2Id);
+            label.setProjectId(projectId);
+            label.setName("feature");
+            label.setColor(io.github.pgatzka.projector.jooq.enums.LabelColor.green);
+            return Optional.of(label);
+        });
+        when(labelData.findById(label3Id)).thenAnswer(inv -> {
+            var label = new io.github.pgatzka.projector.jooq.tables.pojos.Label();
+            label.setId(label3Id);
+            label.setProjectId(projectId);
+            label.setName("urgent");
+            label.setColor(io.github.pgatzka.projector.jooq.enums.LabelColor.orange);
+            return Optional.of(label);
+        });
+
+        service.create(KEY, new CreateIssueRequest("hello", null, null, null, null,
+            List.of(label1Id, label2Id, label3Id)));
+
+        ArgumentCaptor<ActivityAction> actionCaptor = ArgumentCaptor.forClass(ActivityAction.class);
+        verify(activityService, times(4)).emit(eq(issueId), actionCaptor.capture(), any());
+        var actions = actionCaptor.getAllValues();
+        assertThat(actions).containsExactly(
+            ActivityAction.issue_created,
+            ActivityAction.label_added,
+            ActivityAction.label_added,
+            ActivityAction.label_added
+        );
     }
 
     private void stubFindIssue(Issue issue) {

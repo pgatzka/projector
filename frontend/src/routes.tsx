@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { LoginPage } from "@/features/auth/LoginPage";
+import { LoginForm } from "@/features/auth/LoginForm";
 import { SetupPage } from "@/features/auth/SetupPage";
-import { SetupGate } from "@/features/auth/SetupGate";
 import { RequireAuth } from "@/features/auth/RequireAuth";
 import { AppShell } from "@/components/AppShell";
 import { ProjectList } from "@/features/projects/ProjectList";
@@ -15,8 +14,8 @@ import { KanbanBoard } from "@/features/board/KanbanBoard";
 export function AppRoutes() {
   return (
     <Routes>
-      <Route path="/setup" element={<SetupGate><SetupPage /></SetupGate>} />
-      <Route path="/login" element={<SetupGate><LoginPage /></SetupGate>} />
+      <Route path="/setup" element={<SetupPage />} />
+      <Route path="/login" element={<LoginForm />} />
       <Route
         path="/*"
         element={

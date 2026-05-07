@@ -39,8 +39,13 @@ export async function api<T = unknown>(
   const res = await fetch(path, { ...init, headers, credentials: "same-origin" });
 
   if (res.status === 401 && !init.skipAuthRedirect) {
-    const next = encodeURIComponent(window.location.pathname + window.location.search);
-    window.location.assign(`/login?next=${next}`);
+    try {
+      sessionStorage.setItem(
+        "projector.intendedRoute",
+        window.location.pathname + window.location.search,
+      );
+    } catch { /* sessionStorage unavailable */ }
+    window.location.assign("/login");
     throw new ApiError(401, "Unauthenticated; redirecting to /login");
   }
 

@@ -38,7 +38,7 @@ export function Markdown({ children }: { children: string }) {
         remarkPlugins={[remarkKeyN, remarkGfm]}
         rehypePlugins={[[rehypeSanitize, schema]]}
         components={{
-          a: ({ href, children, ...rest }) => {
+          a: ({ node: _node, href, children, ...rest }) => {
             if (href?.startsWith("/")) {
               return (
                 <Link to={href} {...rest}>

@@ -58,4 +58,18 @@ class SetupServiceTest {
             new SetupRequest("admin@example.test", "hunter22!", "Admin")
         )).isInstanceOf(SetupAlreadyCompletedException.class);
     }
+
+    @Test
+    void isRequired_returnsTrue_whenNoAccount() {
+        when(accountDataService.countAll()).thenReturn(0L);
+
+        assertThat(service.isRequired()).isTrue();
+    }
+
+    @Test
+    void isRequired_returnsFalse_whenAccountExists() {
+        when(accountDataService.countAll()).thenReturn(1L);
+
+        assertThat(service.isRequired()).isFalse();
+    }
 }

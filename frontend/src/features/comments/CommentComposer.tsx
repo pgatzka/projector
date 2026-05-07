@@ -96,7 +96,7 @@ export function CommentComposer({
           className={`text-xs ${tooLong ? "text-red-600" : "text-slate-500"}`}
           aria-live="polite"
         >
-          {body.length.toLocaleString()} / {MAX_LEN.toLocaleString()} characters
+          {body.length.toLocaleString("en-US")} / {MAX_LEN.toLocaleString("en-US")} characters
         </span>
         <button
           type="submit"

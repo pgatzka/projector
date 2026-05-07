@@ -48,6 +48,13 @@ public class IssueLabelRepository {
         return dsl.fetchCount(ISSUE_LABEL, ISSUE_LABEL.LABEL_ID.eq(labelId));
     }
 
+    public List<UUID> findIssueIdsByLabelId(UUID labelId) {
+        return dsl.select(ISSUE_LABEL.ISSUE_ID)
+            .from(ISSUE_LABEL)
+            .where(ISSUE_LABEL.LABEL_ID.eq(labelId))
+            .fetchInto(UUID.class);
+    }
+
     public int bulkInsert(UUID issueId, List<UUID> labelIds) {
         if (issueId == null || labelIds == null || labelIds.isEmpty()) {
             return 0;

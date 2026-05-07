@@ -124,3 +124,4 @@ This file is the source of truth for durable conventions in this repo. Read befo
 ## Where things live
 - Plans: `docs/superpowers/plans/`
 - Reference codegen pom (kept for diffs): `docs/jooq-codegen-example/pom.xml`
+- Claude vault folder: `claude/projector` (Obsidian vault — handoff.md + memory.md live here, sync across machines)

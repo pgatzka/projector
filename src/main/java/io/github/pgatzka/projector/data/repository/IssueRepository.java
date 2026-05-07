@@ -51,6 +51,7 @@ public class IssueRepository {
         IssueRecord record = dsl.newRecord(ISSUE, issue);
         record.changed(ISSUE.SEARCH_TSV, false);
         record.store();
+        record.refresh();
         return record.into(Issue.class);
     }
 
@@ -58,6 +59,7 @@ public class IssueRepository {
         IssueRecord record = dsl.newRecord(ISSUE, issue);
         record.changed(ISSUE.SEARCH_TSV, false);
         record.update();
+        record.refresh();
         return record.into(Issue.class);
     }
 

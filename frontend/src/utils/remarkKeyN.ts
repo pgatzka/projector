@@ -1,4 +1,4 @@
-import { visit } from 'unist-util-visit';
+import { SKIP, visit } from 'unist-util-visit';
 import type { Node, Parent } from 'unist';
 import type { Text, Link } from 'mdast';
 
@@ -16,7 +16,7 @@ export default function remarkKeyN() {
       }
 
       const parentType = (parent as MdastNode).type;
-      if (parentType === 'inlineCode' || parentType === 'code') {
+      if (parentType === 'inlineCode' || parentType === 'code' || parentType === 'link' || parentType === 'linkReference') {
         return;
       }
 
@@ -65,6 +65,7 @@ export default function remarkKeyN() {
       }
 
       (parent as any).children.splice(index, 1, ...newNodes);
+      return [SKIP, index + newNodes.length];
     });
   };
 }
