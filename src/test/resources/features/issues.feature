@@ -83,3 +83,10 @@ Feature: Issues CRUD
     Then the response status is 200
     And the response body field "total" equals "3"
     And the response body field "size" equals "2"
+
+  Scenario: Search matches a word that exists only in a comment
+    Given an issue in "ENG" with title "Login" with description "user can log in" exists
+    And a comment "totally unrelated keyword: pineapple" exists on issue "ENG-1"
+    When I GET "/api/projects/ENG/issues?q=pineapple"
+    Then the response status is 200
+    And the response body field "total" equals "1"

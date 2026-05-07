@@ -12,6 +12,7 @@ import io.github.pgatzka.projector.jooq.tables.pojos.Project;
 import io.github.pgatzka.projector.rest.dto.IssueDto;
 import io.github.pgatzka.projector.rest.dto.IssueListQuery;
 import io.github.pgatzka.projector.rest.dto.PageDto;
+import io.github.pgatzka.projector.rest.service.ActivityService;
 import io.github.pgatzka.projector.rest.service.IssueService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,6 +37,7 @@ class IssueServiceListTest {
     private IssueDataService issueData;
     private LabelDataService labelData;
     private IssueLabelDataService issueLabelData;
+    private ActivityService activityService;
     private IssueService service;
 
     private UUID projectId;
@@ -47,7 +49,8 @@ class IssueServiceListTest {
         issueData = mock(IssueDataService.class);
         labelData = mock(LabelDataService.class);
         issueLabelData = mock(IssueLabelDataService.class);
-        service = new IssueService(projectData, issueData, labelData, issueLabelData);
+        activityService = mock(ActivityService.class);
+        service = new IssueService(projectData, issueData, labelData, issueLabelData, activityService);
         projectId = UUID.randomUUID();
         project = new Project();
         project.setId(projectId);

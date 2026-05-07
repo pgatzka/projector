@@ -11,6 +11,7 @@ import io.github.pgatzka.projector.jooq.tables.pojos.Project;
 import io.github.pgatzka.projector.rest.dto.CreateIssueRequest;
 import io.github.pgatzka.projector.rest.exception.IssueNotFoundException;
 import io.github.pgatzka.projector.rest.exception.ProjectNotFoundException;
+import io.github.pgatzka.projector.rest.service.ActivityService;
 import io.github.pgatzka.projector.rest.service.IssueService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,7 @@ class IssueServiceTest {
     private IssueDataService issueData;
     private LabelDataService labelData;
     private IssueLabelDataService issueLabelData;
+    private ActivityService activityService;
     private IssueService service;
 
     @BeforeEach
@@ -38,7 +40,8 @@ class IssueServiceTest {
         issueData = mock(IssueDataService.class);
         labelData = mock(LabelDataService.class);
         issueLabelData = mock(IssueLabelDataService.class);
-        service = new IssueService(projectData, issueData, labelData, issueLabelData);
+        activityService = mock(ActivityService.class);
+        service = new IssueService(projectData, issueData, labelData, issueLabelData, activityService);
     }
 
     @Test

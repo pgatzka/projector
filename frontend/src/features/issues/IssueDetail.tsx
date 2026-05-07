@@ -4,7 +4,9 @@ import { issuesApi, labelsApi } from "@/api";
 import { StatusBadge } from "./StatusBadge";
 import { PriorityBadge } from "./PriorityBadge";
 import { IssueLabelPicker } from "./IssueLabelPicker";
+import { IssueTimeline } from "./IssueTimeline";
 import { LabelBadge } from "@/features/labels/LabelBadge";
+import { Markdown } from "@/components/Markdown";
 
 export function IssueDetail() {
   const { key, number } = useParams<{ key: string; number: string }>();
@@ -77,10 +79,13 @@ export function IssueDetail() {
         />
       </div>
       {data.descriptionMd ? (
-        <pre className="whitespace-pre-wrap rounded bg-slate-50 p-4 text-sm">{data.descriptionMd}</pre>
+        <div className="rounded border border-slate-100 bg-slate-50 p-4">
+          <Markdown>{data.descriptionMd}</Markdown>
+        </div>
       ) : (
         <p className="text-sm text-slate-500">No description.</p>
       )}
+      <IssueTimeline projectKey={key!} issueNumber={num} />
     </article>
   );
 }

@@ -59,9 +59,23 @@ This file is the source of truth for durable conventions in this repo. Read befo
 - Frontend filter/search/page state is persisted via URL query params (`useIssueListQuery` hook). Filter changes reset `page` to 0.
 - IssueDetail uses immediate-on-toggle assignment (one POST/DELETE per checkbox click); IssueForm in edit mode diffs the label set against the original and POSTs/DELETEs the deltas before the field PATCH.
 
+## Comments + activity + markdown (v0.5 onwards)
+- **Comments are append-only.** No PATCH, no DELETE endpoint on individual comments. They cascade away when their issue (or the issue's project) is deleted.
+- Comment body capped at **10000 chars** server-side (`@Size(max=10000)` + `varchar(10000)` column).
+- `comment.search_tsv` is `to_tsvector('english', body_md)` GIN-indexed. Issue list FTS (`?q=`) matches when EITHER `issue.search_tsv` matches OR `exists (select 1 from comment where comment.issue_id = issue.id and comment.search_tsv @@ websearch_to_tsquery('english', q))`.
+- **Activity emission lives in `ActivityService` (rest.service facade) → `ActivityDataService.emit(issueId, action, payload)`.** Wired into `IssueService` (issue_created on create; one row per changed field on update) and `IssueLabelService` (label_added/removed). 8 actions: `issue_created, status_changed, priority_changed, due_date_changed, title_edited, description_edited, label_added, label_removed` (Postgres native enum `activity_action`).
+- **Activity payload is tombstone-resilient.** Snapshot before/after primitive values; for label entities, payload carries `{labelId, labelName, labelColor}` so renaming or deleting the label later doesn't corrupt the historical row.
+- **`ActivityService` ↔ `IssueService` circular dep is broken with `@Lazy` on the ActivityService injection** in IssueService and IssueLabelService. Cleaner refactor (extract issue-id lookup so ActivityService doesn't depend on IssueService) is v0.6+ tech debt.
+- **`ObjectMapper` is NOT a default Spring bean under `spring-boot-starter-webmvc`.** Use `private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()` inside services that need JSONB serialization, NOT constructor injection. See `ActivityDataService` and `ActivityDto`.
+- Timeline endpoint `GET /api/projects/{KEY}/issues/{N}/timeline` returns `{entries: [{type:"comment"|"activity", ...}], total}`, sorted `created_at asc` (oldest first, GitHub-style). Single fetch — no pagination in v0.5.
+- `TimelineEntryDto` is a single record class with nullable `bodyMd`/`action`/`payload` fields + `@JsonInclude(NON_NULL)` for clean wire shape (chosen over sealed interface for Jackson simplicity).
+- Frontend renders markdown via `react-markdown` + `remark-gfm` + `rehype-sanitize` (allowlist: GFM tables/checkboxes/del; href limited to http/https/mailto; `<a>` overridden with `target="_blank" rel="noopener noreferrer"`). Component lives at `frontend/src/components/Markdown.tsx`. Uses Tailwind `prose` classes (requires `@tailwindcss/typography` — installed v0.5).
+- IssueDetail mounts `<IssueTimeline>` below the metadata block; description is rendered via `<Markdown>` (replaced v0.3's `<pre>`).
+- CommentComposer is single-pane Write/Preview toggle (no side-by-side), explicit submit, char counter that turns red on overflow. Refresh on submit goes through react-query invalidation via parent's `onCreated`.
+
 ## jOOQ gotcha — Postgres `GENERATED ALWAYS AS … STORED` columns
 - jOOQ 3.19 OSS does **not** auto-detect Postgres generated columns as readonly. The codegen `<syntheticObjects><readonlyColumns>` config marks the field `@Deprecated` but doesn't exclude it from `record.store()` SQL. Excluding the column via `<excludes>` regex doesn't work for individual columns either.
-- **Workaround:** in any repository method that does `dsl.newRecord(TABLE, pojo).store()` or `.update()` on a table with a generated column, call `record.changed(TABLE.GENERATED_FIELD, false)` BEFORE the store. See `IssueRepository.insert` and `IssueRepository.update` for the `ISSUE.SEARCH_TSV` case.
+- **Workaround:** in any repository method that does `dsl.newRecord(TABLE, pojo).store()` or `.update()` on a table with a generated column, call `record.changed(TABLE.GENERATED_FIELD, false)` BEFORE the store. See `IssueRepository.insert/update` for `ISSUE.SEARCH_TSV` and `CommentRepository.insert` for `COMMENT.SEARCH_TSV`.
 
 ## Projects + Issues (v0.3 onwards)
 - `project.key` is 2–10 uppercase letters, must start with a letter; unique. Validated app-side.

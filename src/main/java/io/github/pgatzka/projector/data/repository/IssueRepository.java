@@ -80,7 +80,14 @@ public class IssueRepository {
             ));
         }
         if (query.q() != null) {
-            conditions.add(DSL.condition("{0} @@ websearch_to_tsquery('english', {1})", ISSUE.SEARCH_TSV, DSL.val(query.q())));
+            var issueMatches = DSL.condition("{0} @@ websearch_to_tsquery('english', {1})", ISSUE.SEARCH_TSV, DSL.val(query.q()));
+            var commentMatches = DSL.exists(
+                dsl.selectOne().from(DSL.table("comment"))
+                    .where(DSL.field("comment.issue_id").eq(ISSUE.ID)
+                        .and(DSL.condition("{0} @@ websearch_to_tsquery('english', {1})",
+                            DSL.field("comment.search_tsv"), DSL.val(query.q()))))
+            );
+            conditions.add(issueMatches.or(commentMatches));
         }
         Condition where = DSL.and(conditions);
 

@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import typography from "@tailwindcss/typography";
 
 // Belt-and-braces safelist for label colors. LabelBadge.tsx already names
 // every class string literally so JIT preserves them, but pinning them here
@@ -29,5 +30,5 @@ export default {
   theme: {
     extend: {},
   },
-  plugins: [],
+  plugins: [typography],
 } satisfies Config;

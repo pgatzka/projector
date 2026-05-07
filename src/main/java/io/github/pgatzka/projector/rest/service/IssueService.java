@@ -4,6 +4,7 @@ import io.github.pgatzka.projector.data.service.IssueDataService;
 import io.github.pgatzka.projector.data.service.IssueLabelDataService;
 import io.github.pgatzka.projector.data.service.LabelDataService;
 import io.github.pgatzka.projector.data.service.ProjectDataService;
+import io.github.pgatzka.projector.jooq.enums.ActivityAction;
 import io.github.pgatzka.projector.jooq.enums.IssuePriority;
 import io.github.pgatzka.projector.jooq.enums.IssueStatus;
 import io.github.pgatzka.projector.jooq.tables.pojos.Issue;
@@ -18,11 +19,15 @@ import io.github.pgatzka.projector.rest.exception.IssueNotFoundException;
 import io.github.pgatzka.projector.rest.exception.LabelNotFoundException;
 import io.github.pgatzka.projector.rest.exception.LabelNotInProjectException;
 import io.github.pgatzka.projector.rest.exception.ProjectNotFoundException;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -32,15 +37,18 @@ public class IssueService {
     private final IssueDataService issueData;
     private final LabelDataService labelData;
     private final IssueLabelDataService issueLabelData;
+    private final ActivityService activityService;
 
     public IssueService(ProjectDataService projectData,
                         IssueDataService issueData,
                         LabelDataService labelData,
-                        IssueLabelDataService issueLabelData) {
+                        IssueLabelDataService issueLabelData,
+                        @Lazy ActivityService activityService) {
         this.projectData = projectData;
         this.issueData = issueData;
         this.labelData = labelData;
         this.issueLabelData = issueLabelData;
+        this.activityService = activityService;
     }
 
     public PageDto<IssueDto> list(String projectKey, IssueListQuery query) {
@@ -81,6 +89,7 @@ public class IssueService {
         issue.setPriority(req.priority() != null ? req.priority() : IssuePriority.medium);
         issue.setDueDate(req.dueDate());
         Issue created = issueData.create(issue);
+        activityService.emit(created.getId(), ActivityAction.issue_created, Map.of());
         if (req.labelIds() != null && !req.labelIds().isEmpty()) {
             for (UUID labelId : req.labelIds()) {
                 Label l = labelData.findById(labelId)
@@ -94,18 +103,61 @@ public class IssueService {
         return created;
     }
 
+    @Transactional
     public Issue update(String projectKey, int number, UpdateIssueRequest req) {
         Issue issue = findByProjectKeyAndNumber(projectKey, number);
+
+        IssueStatus oldStatus = issue.getStatus();
+        IssuePriority oldPriority = issue.getPriority();
+        LocalDate oldDueDate = issue.getDueDate();
+        String oldTitle = issue.getTitle();
+        String oldDescription = issue.getDescriptionMd();
+
         if (req.title() != null) issue.setTitle(req.title());
         if (req.descriptionMd() != null) issue.setDescriptionMd(req.descriptionMd());
         if (req.status() != null) issue.setStatus(req.status());
         if (req.priority() != null) issue.setPriority(req.priority());
         if (req.dueDate() != null) issue.setDueDate(req.dueDate());
-        return issueData.update(issue);
+
+        Issue updated = issueData.update(issue);
+
+        if (req.status() != null && !Objects.equals(oldStatus, req.status())) {
+            activityService.emit(updated.getId(), ActivityAction.status_changed,
+                beforeAfter(enumName(oldStatus), enumName(req.status())));
+        }
+        if (req.priority() != null && !Objects.equals(oldPriority, req.priority())) {
+            activityService.emit(updated.getId(), ActivityAction.priority_changed,
+                beforeAfter(enumName(oldPriority), enumName(req.priority())));
+        }
+        if (req.dueDate() != null && !Objects.equals(oldDueDate, req.dueDate())) {
+            activityService.emit(updated.getId(), ActivityAction.due_date_changed,
+                beforeAfter(oldDueDate == null ? null : oldDueDate.toString(), req.dueDate().toString()));
+        }
+        if (req.title() != null && !Objects.equals(oldTitle, req.title())) {
+            activityService.emit(updated.getId(), ActivityAction.title_edited,
+                beforeAfter(oldTitle, req.title()));
+        }
+        if (req.descriptionMd() != null && !Objects.equals(oldDescription, req.descriptionMd())) {
+            activityService.emit(updated.getId(), ActivityAction.description_edited,
+                beforeAfter(oldDescription, req.descriptionMd()));
+        }
+
+        return updated;
     }
 
     public void delete(String projectKey, int number) {
         Issue issue = findByProjectKeyAndNumber(projectKey, number);
         issueData.deleteById(issue.getId());
+    }
+
+    private static String enumName(Enum<?> e) {
+        return e == null ? null : e.name();
+    }
+
+    private static Map<String, Object> beforeAfter(Object before, Object after) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("before", before);
+        m.put("after", after);
+        return m;
     }
 }
