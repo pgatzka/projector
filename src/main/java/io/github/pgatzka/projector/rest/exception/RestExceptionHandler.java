@@ -55,4 +55,19 @@ public class RestExceptionHandler {
     public ProblemDetail handleProjectKeyTaken(ProjectKeyTakenException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
+
+    @ExceptionHandler(LabelNotFoundException.class)
+    public ProblemDetail handleLabelNotFound(LabelNotFoundException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(LabelNameTakenException.class)
+    public ProblemDetail handleLabelNameTaken(LabelNameTakenException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(LabelNotInProjectException.class)
+    public ProblemDetail handleLabelNotInProject(LabelNotInProjectException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
 }

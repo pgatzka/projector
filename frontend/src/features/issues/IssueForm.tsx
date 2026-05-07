@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ApiError, IssuePriority, IssueStatus, issuesApi } from "@/api";
+import { ApiError, IssuePriority, IssueStatus, issuesApi, labelsApi } from "@/api";
+import { IssueLabelPicker } from "./IssueLabelPicker";
 
 const STATUSES: IssueStatus[] = ["backlog", "todo", "in_progress", "done", "cancelled"];
 const PRIORITIES: IssuePriority[] = ["low", "medium", "high", "urgent"];
@@ -24,6 +25,8 @@ export function IssueForm({ mode }: { mode: "create" | "edit" }) {
   const [status, setStatus] = useState<IssueStatus>("todo");
   const [priority, setPriority] = useState<IssuePriority>("medium");
   const [dueDate, setDueDate] = useState("");
+  const [labelIds, setLabelIds] = useState<string[]>([]);
+  const [originalLabelIds, setOriginalLabelIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -34,6 +37,9 @@ export function IssueForm({ mode }: { mode: "create" | "edit" }) {
       setStatus(existing.status);
       setPriority(existing.priority);
       setDueDate(existing.dueDate ?? "");
+      const ids = existing.labels.map((l) => l.id);
+      setLabelIds(ids);
+      setOriginalLabelIds(ids);
     }
   }, [isEdit, existing]);
 
@@ -43,6 +49,12 @@ export function IssueForm({ mode }: { mode: "create" | "edit" }) {
     setSubmitting(true);
     try {
       if (isEdit) {
+        const toAdd = labelIds.filter((id) => !originalLabelIds.includes(id));
+        const toRemove = originalLabelIds.filter((id) => !labelIds.includes(id));
+        await Promise.all([
+          ...toAdd.map((id) => labelsApi.assign(key!, num!, id)),
+          ...toRemove.map((id) => labelsApi.unassign(key!, num!, id)),
+        ]);
         await issuesApi.update(key!, num!, {
           title, descriptionMd: description, status, priority,
           dueDate: dueDate || undefined,
@@ -53,6 +65,7 @@ export function IssueForm({ mode }: { mode: "create" | "edit" }) {
         const created = await issuesApi.create(key!, {
           title, descriptionMd: description || undefined, status, priority,
           dueDate: dueDate || undefined,
+          labelIds: labelIds.length > 0 ? labelIds : undefined,
         });
         await qc.invalidateQueries({ queryKey: ["projects", key, "issues"] });
         navigate(`/projects/${key}/issues/${created.number}`, { replace: true });
@@ -103,6 +116,10 @@ export function IssueForm({ mode }: { mode: "create" | "edit" }) {
           <span className="mb-1 block text-sm font-medium text-slate-700">Due date</span>
           <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-full rounded border border-slate-300 px-3 py-2 text-sm" />
         </label>
+      </div>
+      <div>
+        <span className="mb-1 block text-sm font-medium text-slate-700">Labels</span>
+        <IssueLabelPicker projectKey={key!} selectedIds={labelIds} onChange={setLabelIds} />
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div className="flex gap-2">

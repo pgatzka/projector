@@ -47,6 +47,22 @@ This file is the source of truth for durable conventions in this repo. Read befo
 - `ActorContext` reads from `SecurityContextHolder`; `SetupActorOverride` bridges the chicken-and-egg of `/api/setup`
 - `POST /api/login` returns 200 + sets cookie. `POST /api/logout` invalidates session, returns 204. `GET /api/me` returns 200/401.
 
+## Labels + filtering + FTS (v0.4 onwards)
+- Label color is a Postgres native enum `label_color` with 12 values: `gray, red, orange, yellow, green, teal, blue, indigo, violet, pink, brown, slate`. Tailwind has no `brown` — `LabelBadge` maps it to `amber` swatches.
+- Label name is unique per project, **case-insensitive** (`unique index on (project_id, lower(name))`).
+- Label management UI lives at `/projects/{KEY}/labels`. Inline create/edit form, swatch-based color picker, delete confirms with assignment count fetched via `GET /api/projects/{KEY}/issues?label=<id>&size=1` (using the `total` field).
+- Issue list endpoint `GET /api/projects/{KEY}/issues` returns a wrapped page: `{items: IssueDto[], total, page, size}`. Sort is `number desc` (no sort param yet). Default size 50, max 100 (server-side clamp).
+- Filter facets: `?status=todo,in_progress&priority=high,urgent&label=<uuid>,<uuid>&q=login&page=2&size=50`. **OR within a facet, AND across facets.** Multi-value uses comma separation. `q` is FTS via `websearch_to_tsquery('english', q)` against the generated `issue.search_tsv`.
+- `IssueDto` embeds `labels: [{id, name, color}]` — always present (possibly empty). Single batch query `loadLabelsByIssueIds` populates them via `fetchGroups`.
+- Label assignment is per-label and idempotent: `POST /api/projects/{KEY}/issues/{N}/labels` with body `{labelId}` (200 even if already assigned), `DELETE /api/projects/{KEY}/issues/{N}/labels/{labelId}` (204 even if not assigned). Cross-project label → 400 `LabelNotInProjectException`.
+- `CreateIssueRequest.labelIds` (optional `List<UUID>`) — validated and bulk-inserted in the same transaction as the issue.
+- Frontend filter/search/page state is persisted via URL query params (`useIssueListQuery` hook). Filter changes reset `page` to 0.
+- IssueDetail uses immediate-on-toggle assignment (one POST/DELETE per checkbox click); IssueForm in edit mode diffs the label set against the original and POSTs/DELETEs the deltas before the field PATCH.
+
+## jOOQ gotcha — Postgres `GENERATED ALWAYS AS … STORED` columns
+- jOOQ 3.19 OSS does **not** auto-detect Postgres generated columns as readonly. The codegen `<syntheticObjects><readonlyColumns>` config marks the field `@Deprecated` but doesn't exclude it from `record.store()` SQL. Excluding the column via `<excludes>` regex doesn't work for individual columns either.
+- **Workaround:** in any repository method that does `dsl.newRecord(TABLE, pojo).store()` or `.update()` on a table with a generated column, call `record.changed(TABLE.GENERATED_FIELD, false)` BEFORE the store. See `IssueRepository.insert` and `IssueRepository.update` for the `ISSUE.SEARCH_TSV` case.
+
 ## Projects + Issues (v0.3 onwards)
 - `project.key` is 2–10 uppercase letters, must start with a letter; unique. Validated app-side.
 - Issue identifier is `<project.key>-<issue.number>`. `issue.number` is per-project, claimed via row-locked increment of `project.next_issue_number` inside the create transaction.

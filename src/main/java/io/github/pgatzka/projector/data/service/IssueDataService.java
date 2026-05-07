@@ -2,10 +2,15 @@ package io.github.pgatzka.projector.data.service;
 
 import io.github.pgatzka.projector.data.repository.IssueRepository;
 import io.github.pgatzka.projector.jooq.tables.pojos.Issue;
+import io.github.pgatzka.projector.jooq.tables.pojos.Label;
+import io.github.pgatzka.projector.rest.dto.IssueListQuery;
+import io.github.pgatzka.projector.rest.dto.PageDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -35,4 +40,14 @@ public class IssueDataService {
     public Issue update(Issue issue) { return repository.update(issue); }
 
     public int deleteById(UUID id) { return repository.deleteById(id); }
+
+    @Transactional(readOnly = true)
+    public PageDto<Issue> listForProject(UUID projectId, IssueListQuery query) {
+        return repository.listForProject(projectId, query);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<UUID, List<Label>> loadLabelsByIssueIds(Collection<UUID> issueIds) {
+        return repository.loadLabelsByIssueIds(issueIds);
+    }
 }

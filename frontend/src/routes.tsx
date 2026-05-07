@@ -9,6 +9,7 @@ import { ProjectForm } from "@/features/projects/ProjectForm";
 import { ProjectHome } from "@/features/projects/ProjectHome";
 import { IssueDetail } from "@/features/issues/IssueDetail";
 import { IssueForm } from "@/features/issues/IssueForm";
+import { LabelsPage } from "@/features/labels/LabelsPage";
 
 export function AppRoutes() {
   return (
@@ -26,6 +27,7 @@ export function AppRoutes() {
                 <Route path="/projects/new" element={<ProjectForm mode="create" />} />
                 <Route path="/projects/:key" element={<ProjectHome />} />
                 <Route path="/projects/:key/edit" element={<ProjectForm mode="edit" />} />
+                <Route path="/projects/:key/labels" element={<LabelsPage />} />
                 <Route path="/projects/:key/issues/new" element={<IssueForm mode="create" />} />
                 <Route path="/projects/:key/issues/:number" element={<IssueDetail />} />
                 <Route path="/projects/:key/issues/:number/edit" element={<IssueForm mode="edit" />} />

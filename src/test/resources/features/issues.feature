@@ -47,3 +47,39 @@ Feature: Issues CRUD
     Then the response status is 204
     When I GET "/api/projects/ENG/issues/1"
     Then the response status is 404
+
+  Scenario: List issues returns wrapped page
+    Given an issue in "ENG" with title "First" exists
+    When I GET "/api/projects/ENG/issues"
+    Then the response status is 200
+    And the response body field "total" equals "1"
+    And the response body field "size" equals "50"
+
+  Scenario: Filter issues by status
+    Given an issue in "ENG" with title "Bug" exists
+    And an issue in "ENG" with title "Done thing" with status "done" exists
+    When I GET "/api/projects/ENG/issues?status=done"
+    Then the response status is 200
+    And the response body field "total" equals "1"
+
+  Scenario: Filter issues by priority OR-within
+    Given an issue in "ENG" with title "Low one" with priority "low" exists
+    And an issue in "ENG" with title "High one" with priority "high" exists
+    And an issue in "ENG" with title "Urgent one" with priority "urgent" exists
+    When I GET "/api/projects/ENG/issues?priority=high,urgent"
+    Then the response status is 200
+    And the response body field "total" equals "2"
+
+  Scenario: Full-text search by description
+    Given an issue in "ENG" with title "Auth bug" with description "login fails on logout" exists
+    And an issue in "ENG" with title "Build red" with description "ci pipeline broke" exists
+    When I GET "/api/projects/ENG/issues?q=login"
+    Then the response status is 200
+    And the response body field "total" equals "1"
+
+  Scenario: Pagination clamps and pages
+    Given 3 issues in "ENG" exist
+    When I GET "/api/projects/ENG/issues?size=2&page=0"
+    Then the response status is 200
+    And the response body field "total" equals "3"
+    And the response body field "size" equals "2"

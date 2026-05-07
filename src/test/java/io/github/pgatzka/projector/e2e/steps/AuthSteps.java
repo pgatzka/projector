@@ -115,6 +115,7 @@ public class AuthSteps {
     public int getPort() { return port; }
     public String getSessionCookie() { return sessionCookie; }
     public String getCsrfToken() { return csrfToken; }
+    public ResponseEntity<Map> getLastResponse() { return response; }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void setLastResponse(org.springframework.http.ResponseEntity<?> r) {

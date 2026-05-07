@@ -1,8 +1,10 @@
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { issuesApi } from "@/api";
+import { issuesApi, labelsApi } from "@/api";
 import { StatusBadge } from "./StatusBadge";
 import { PriorityBadge } from "./PriorityBadge";
+import { IssueLabelPicker } from "./IssueLabelPicker";
+import { LabelBadge } from "@/features/labels/LabelBadge";
 
 export function IssueDetail() {
   const { key, number } = useParams<{ key: string; number: string }>();
@@ -23,6 +25,19 @@ export function IssueDetail() {
     await issuesApi.delete(key!, num);
     await qc.invalidateQueries({ queryKey: ["projects", key, "issues"] });
     navigate(`/projects/${key}`, { replace: true });
+  }
+
+  async function onLabelsChange(nextIds: string[]) {
+    if (!data) return;
+    const currentIds = data.labels.map((l) => l.id);
+    const toAdd = nextIds.filter((id) => !currentIds.includes(id));
+    const toRemove = currentIds.filter((id) => !nextIds.includes(id));
+    await Promise.all([
+      ...toAdd.map((id) => labelsApi.assign(key!, num, id)),
+      ...toRemove.map((id) => labelsApi.unassign(key!, num, id)),
+    ]);
+    await qc.invalidateQueries({ queryKey: ["projects", key, "issues", num] });
+    await qc.invalidateQueries({ queryKey: ["projects", key, "issues"] });
   }
 
   return (
@@ -46,10 +61,20 @@ export function IssueDetail() {
           </button>
         </div>
       </header>
-      <div className="flex gap-2 text-sm">
+      <div className="flex flex-wrap items-center gap-2 text-sm">
         <StatusBadge status={data.status} />
         <PriorityBadge priority={data.priority} />
         {data.dueDate && <span className="rounded bg-slate-100 px-2 py-0.5 text-xs">Due {data.dueDate}</span>}
+        {data.labels.map((l) => (
+          <LabelBadge key={l.id} name={l.name} color={l.color} />
+        ))}
+      </div>
+      <div>
+        <IssueLabelPicker
+          projectKey={key!}
+          selectedIds={data.labels.map((l) => l.id)}
+          onChange={onLabelsChange}
+        />
       </div>
       {data.descriptionMd ? (
         <pre className="whitespace-pre-wrap rounded bg-slate-50 p-4 text-sm">{data.descriptionMd}</pre>

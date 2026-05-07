@@ -1,6 +1,8 @@
 package io.github.pgatzka.projector.unit;
 
 import io.github.pgatzka.projector.data.service.IssueDataService;
+import io.github.pgatzka.projector.data.service.IssueLabelDataService;
+import io.github.pgatzka.projector.data.service.LabelDataService;
 import io.github.pgatzka.projector.data.service.ProjectDataService;
 import io.github.pgatzka.projector.jooq.enums.IssuePriority;
 import io.github.pgatzka.projector.jooq.enums.IssueStatus;
@@ -26,13 +28,17 @@ class IssueServiceTest {
 
     private ProjectDataService projectData;
     private IssueDataService issueData;
+    private LabelDataService labelData;
+    private IssueLabelDataService issueLabelData;
     private IssueService service;
 
     @BeforeEach
     void setUp() {
         projectData = mock(ProjectDataService.class);
         issueData = mock(IssueDataService.class);
-        service = new IssueService(projectData, issueData);
+        labelData = mock(LabelDataService.class);
+        issueLabelData = mock(IssueLabelDataService.class);
+        service = new IssueService(projectData, issueData, labelData, issueLabelData);
     }
 
     @Test
@@ -45,7 +51,7 @@ class IssueServiceTest {
         when(issueData.create(any(Issue.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Issue created = service.create("ENG",
-            new CreateIssueRequest("Hello", "body", IssueStatus.todo, IssuePriority.medium, null));
+            new CreateIssueRequest("Hello", "body", IssueStatus.todo, IssuePriority.medium, null, null));
 
         assertThat(created.getNumber()).isEqualTo(42);
         assertThat(created.getProjectId()).isEqualTo(projectId);
@@ -57,7 +63,7 @@ class IssueServiceTest {
         when(projectData.findByKey("NOPE")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.create("NOPE",
-            new CreateIssueRequest("x", null, null, null, null)))
+            new CreateIssueRequest("x", null, null, null, null, null)))
             .isInstanceOf(ProjectNotFoundException.class);
     }
 
