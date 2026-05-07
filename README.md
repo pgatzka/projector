@@ -42,13 +42,31 @@ docker run --rm -p 8080:8080 \
 ```
 Or include the app in your homeserver's compose stack alongside `postgres:18-alpine` and let `spring-boot-docker-compose` discover it.
 
-## Endpoints (v0.1)
-- `GET /api/health` — application health (always 200, body `{"status":"ok"}`)
-- `GET /actuator/health` — Spring health
-- `GET /actuator/prometheus` — Prometheus scrape
-- `GET /v3/api-docs` — OpenAPI spec
-- `GET /swagger-ui.html` — Swagger UI
-- `GET /` — SPA (placeholder)
+## Pull the published image (no build required)
+```bash
+docker pull ghcr.io/pgatzka/projector:1.0.0-SNAPSHOT
+```
+Each `main` push tags both `${version}-${shortSha}` and `${version}` on GHCR. No `:latest`.
+
+## First-time setup
+Once the app is running, create the single admin account:
+```bash
+curl -X POST http://localhost:8080/api/setup \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"you@example.com","password":"<choose-one>"}'
+```
+The `/api/setup` endpoint returns 409 once an account exists. Subsequent logins go through `POST /api/login`.
+
+## Endpoints
+- `GET /api/health`, `GET /actuator/health`, `GET /actuator/prometheus`
+- `GET /v3/api-docs`, `GET /swagger-ui.html`
+- `POST /api/setup`, `POST /api/login`, `POST /api/logout`, `GET /api/me`
+- `/api/projects`, `/api/projects/{key}/issues`, `/api/projects/{key}/labels`
+- `/api/projects/{key}/issues/{n}/comments`, `/api/projects/{key}/issues/{n}/timeline`
+- `GET /` — SPA (list view, kanban board, issue detail, label management)
 
 ## Project conventions
 See [`CLAUDE.md`](./CLAUDE.md). Particularly: layer packaging, mandatory audit columns, jOOQ-generated POJOs, no `:latest` image tag.
+
+## License
+MIT — see [`LICENSE`](./LICENSE).

@@ -99,7 +99,7 @@ export function IssueForm({ mode }: { mode: "create" | "edit" }) {
           maxLength={50000}
         />
       </label>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-slate-700">Status</span>
           <select value={status} onChange={(e) => setStatus(e.target.value as IssueStatus)} className="w-full rounded border border-slate-300 px-3 py-2 text-sm">

@@ -44,8 +44,8 @@ export function IssueDetail() {
 
   return (
     <article className="space-y-4 rounded border border-slate-200 bg-white p-6">
-      <header className="flex items-baseline justify-between">
-        <h2 className="text-xl font-semibold">
+      <header className="flex flex-col gap-3 md:items-baseline md:justify-between">
+        <h2 className="text-lg md:text-xl font-semibold break-words">
           <span className="font-mono text-slate-500">{data.identifier}</span> · {data.title}
         </h2>
         <div className="flex gap-2">

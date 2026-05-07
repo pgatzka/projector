@@ -60,9 +60,9 @@ export function LabelsPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-baseline justify-between">
+      <header className="flex flex-col gap-3 md:items-baseline md:justify-between">
         <div>
-          <h2 className="text-xl font-semibold">
+          <h2 className="text-lg md:text-xl font-semibold">
             <span className="font-mono text-slate-500">{projectQuery.data.key}</span> · Labels
           </h2>
           <Link to={`/projects/${key}`} className="text-sm text-slate-600 hover:underline">

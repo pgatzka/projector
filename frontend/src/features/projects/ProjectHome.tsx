@@ -39,16 +39,25 @@ export function ProjectHome() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-baseline justify-between">
+      <header className="flex flex-col gap-3 md:items-baseline md:justify-between">
         <div>
-          <h2 className="text-xl font-semibold">
+          <h2 className="text-lg md:text-xl font-semibold">
             <span className="font-mono text-slate-500">{projectQuery.data.key}</span> · {projectQuery.data.name}
           </h2>
           {projectQuery.data.description && (
             <p className="mt-1 max-w-2xl text-sm text-slate-600">{projectQuery.data.description}</p>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
+          <div className="inline-flex overflow-hidden rounded border border-slate-300 text-sm" role="group" aria-label="View">
+            <span className="bg-slate-900 px-3 py-1.5 font-medium text-white">List</span>
+            <Link
+              to={`/projects/${key}/board`}
+              className="px-3 py-1.5 text-slate-600 hover:bg-slate-50"
+            >
+              Board
+            </Link>
+          </div>
           <Link
             to={`/projects/${key}/issues/new`}
             className="rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800"

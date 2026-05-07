@@ -1,6 +1,8 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkKeyN from "../utils/remarkKeyN";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
+import { Link } from "react-router-dom";
 import type { Schema } from "hast-util-sanitize";
 
 const schema: Schema = {
@@ -33,14 +35,23 @@ export function Markdown({ children }: { children: string }) {
   return (
     <div className="prose prose-sm prose-slate max-w-none">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkKeyN, remarkGfm]}
         rehypePlugins={[[rehypeSanitize, schema]]}
         components={{
-          a: ({ href, children, ...rest }) => (
-            <a href={href} target="_blank" rel="noopener noreferrer" {...rest}>
-              {children}
-            </a>
-          ),
+          a: ({ href, children, ...rest }) => {
+            if (href?.startsWith("/")) {
+              return (
+                <Link to={href} {...rest}>
+                  {children}
+                </Link>
+              );
+            }
+            return (
+              <a href={href} target="_blank" rel="noopener noreferrer" {...rest}>
+                {children}
+              </a>
+            );
+          },
         }}
       >
         {children}

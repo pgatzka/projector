@@ -10,6 +10,7 @@ import { ProjectHome } from "@/features/projects/ProjectHome";
 import { IssueDetail } from "@/features/issues/IssueDetail";
 import { IssueForm } from "@/features/issues/IssueForm";
 import { LabelsPage } from "@/features/labels/LabelsPage";
+import { KanbanBoard } from "@/features/board/KanbanBoard";
 
 export function AppRoutes() {
   return (
@@ -26,6 +27,7 @@ export function AppRoutes() {
                 <Route path="/projects" element={<ProjectList />} />
                 <Route path="/projects/new" element={<ProjectForm mode="create" />} />
                 <Route path="/projects/:key" element={<ProjectHome />} />
+                <Route path="/projects/:key/board" element={<KanbanBoard />} />
                 <Route path="/projects/:key/edit" element={<ProjectForm mode="edit" />} />
                 <Route path="/projects/:key/labels" element={<LabelsPage />} />
                 <Route path="/projects/:key/issues/new" element={<IssueForm mode="create" />} />
