@@ -8,6 +8,13 @@ import tailwindcss from '@tailwindcss/vite'
 // (wired in a later step), so the same /api paths work without a proxy.
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // Build straight into the backend's classpath so `mvn package` bundles the UI into
+  // the jar (Spring Boot serves it from classpath:/static/). Dev (`npm run dev`) is
+  // unaffected — it serves in-memory.
+  build: {
+    outDir: '../target/classes/static',
+    emptyOutDir: true,
+  },
   server: {
     proxy: {
       '/api': 'http://localhost:8080',
