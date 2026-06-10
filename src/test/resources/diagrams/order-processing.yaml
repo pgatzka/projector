@@ -1,0 +1,22 @@
+diagram: Order Processing
+nodes:
+  - { id: start,     type: start }
+  - { id: receive,   type: action,   label: Receive order }
+  - { id: check,     type: decision, label: In stock? }
+  - { id: fork1,     type: fork }
+  - { id: ship,      type: action,   label: Ship order }
+  - { id: invoice,   type: action,   label: Send invoice }
+  - { id: join1,     type: join }
+  - { id: backorder, type: action,   label: Backorder }
+  - { id: done,      type: end }
+edges:
+  - { from: start,   to: receive }
+  - { from: receive, to: check }
+  - { from: check,   to: fork1,     guard: "in stock" }
+  - { from: check,   to: backorder, guard: "out of stock" }
+  - { from: fork1,   to: ship }
+  - { from: fork1,   to: invoice }
+  - { from: ship,    to: join1 }
+  - { from: invoice, to: join1 }
+  - { from: join1,   to: done }
+  - { from: backorder, to: done }
