@@ -16,6 +16,8 @@
 	<properties>
 		<java.version>25</java.version>
 		<elk.version>0.11.0</elk.version>
+		<!-- Set -Dfrontend.skip=true to skip building the frontend (backend-only builds). -->
+		<frontend.skip>false</frontend.skip>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -83,6 +85,49 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+
+			<!-- Builds the React frontend during the Maven build (using a pinned, locally
+			     installed Node) and emits it into target/classes/static (via the Vite
+			     build.outDir) so it is packaged in the jar and served by Spring Boot. -->
+			<plugin>
+				<groupId>com.github.eirslett</groupId>
+				<artifactId>frontend-maven-plugin</artifactId>
+				<version>2.0.0</version>
+				<configuration>
+					<workingDirectory>frontend</workingDirectory>
+					<installDirectory>target</installDirectory>
+					<skip>${frontend.skip}</skip>
+				</configuration>
+				<executions>
+					<execution>
+						<id>install-node-and-npm</id>
+						<goals>
+							<goal>install-node-and-npm</goal>
+						</goals>
+						<configuration>
+							<nodeVersion>v24.16.0</nodeVersion>
+						</configuration>
+					</execution>
+					<execution>
+						<id>npm-ci</id>
+						<goals>
+							<goal>npm</goal>
+						</goals>
+						<configuration>
+							<arguments>ci</arguments>
+						</configuration>
+					</execution>
+					<execution>
+						<id>npm-build</id>
+						<goals>
+							<goal>npm</goal>
+						</goals>
+						<configuration>
+							<arguments>run build</arguments>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 
 			<!-- Starts a throwaway MongoDB container for integration tests (*IT). Uses a

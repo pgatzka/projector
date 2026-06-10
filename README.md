@@ -37,18 +37,31 @@ npm install   # first time only
 npm run dev
 ```
 
-Open the URL Vite prints (default http://localhost:5173). The page shows the backend
-health status, confirming the frontend ↔ backend wire.
+Open the URL Vite prints (default http://localhost:5173): the projector editor, with a
+Monaco YAML pane, live SVG preview, and the saved-diagrams sidebar.
 
 ## Build
 
 ```bash
-./mvnw clean package        # backend jar
-cd frontend && npm run build  # frontend production bundle (dist/)
+./mvnw clean package          # builds the frontend AND the backend into one jar
 ```
 
-In production the backend serves the built frontend (wiring added in a later step), so
-the same `/api` paths work without the dev proxy.
+`frontend-maven-plugin` installs a pinned Node, runs `npm ci` + `npm run build`, and the
+Vite output lands in `target/classes/static`, so the jar serves the UI from
+`classpath:/static/`. Skip the frontend build with `-Dfrontend.skip=true` (backend only).
+
+## Run (production)
+
+The packaged jar serves the UI and the API on one port and is fully self-contained
+(Monaco is bundled, no CDN). Unlike `spring-boot:run`, it does **not** auto-start
+MongoDB — point it at a real one:
+
+```bash
+SPRING_MONGODB_URI=mongodb://localhost:27017/projector \
+  java -jar target/projector-1.0.0-SNAPSHOT.jar
+```
+
+Then open http://localhost:8080.
 
 ## Tests
 
