@@ -53,6 +53,11 @@ the same `/api` paths work without the dev proxy.
 ## Tests
 
 ```bash
-./mvnw test                 # backend
+./mvnw test                   # backend unit tests (no Docker needed)
+./mvnw verify                 # also runs integration tests (*IT)
 cd frontend && npm run build  # type-checks the frontend
 ```
+
+`./mvnw verify` runs the persistence integration tests, which use
+`docker-maven-plugin` to start a throwaway MongoDB container on host port **27018**
+(and stop it afterwards), so Docker must be available and that port free.
