@@ -84,6 +84,66 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+
+			<!-- Starts a throwaway MongoDB container for integration tests (*IT). Uses a
+			     fixed host port (27018, off the default 27017 to avoid clashing with a local
+			     Mongo or the docker-compose one) so the test URI is a literal: relying on a
+			     dynamic port property fails because failsafe interpolates systemPropertyVariables
+			     before this plugin assigns the port. -->
+			<plugin>
+				<groupId>io.fabric8</groupId>
+				<artifactId>docker-maven-plugin</artifactId>
+				<version>0.48.1</version>
+				<configuration>
+					<images>
+						<image>
+							<alias>mongo</alias>
+							<name>mongo:7</name>
+							<run>
+								<ports>
+									<port>27018:27017</port>
+								</ports>
+								<wait>
+									<log>Waiting for connections</log>
+									<time>60000</time>
+								</wait>
+							</run>
+						</image>
+					</images>
+				</configuration>
+				<executions>
+					<execution>
+						<id>mongo-start</id>
+						<phase>pre-integration-test</phase>
+						<goals>
+							<goal>start</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>mongo-stop</id>
+						<phase>post-integration-test</phase>
+						<goals>
+							<goal>stop</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- Runs *IT integration tests (e.g. DiagramPersistenceIT) against the
+			     docker-maven-plugin MongoDB. The test points itself at localhost:27018 and
+			     disables docker-compose via @DynamicPropertySource. -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 
