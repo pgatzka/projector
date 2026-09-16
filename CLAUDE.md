@@ -13,6 +13,11 @@ Always use the Maven wrapper (`./mvnw`), not a system `mvn`.
 - Format code: `./mvnw spotless:apply` (Palantir Java Format); `verify` fails on unformatted code via `spotless:check`
 - Single test: `./mvnw test -Dtest=HelloControllerTest` or `-Dtest=HelloControllerTest#hello`
 
+## Git workflow
+
+- `main` is protected: never push to it directly. Every change goes on a branch and through a pull request (`gh pr create`).
+- Never merge a pull request yourself. Only the user merges; if merging seems needed, ask for permission first.
+
 ## Stack
 
 - Java 25, set via `java.version` in `pom.xml` (the Spring Boot parent maps it to the compiler release).
