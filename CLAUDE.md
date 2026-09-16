@@ -34,7 +34,7 @@ Boot 4 split the starters into modules; older names/packages from Boot 3 do not 
 
 - Web uses `spring-boot-starter-webmvc` (not `spring-boot-starter-web`); tests use `spring-boot-starter-webmvc-test` (not `spring-boot-starter-test`). These names are expected to change again in future releases, so check current Boot docs before adding starters.
 - Test slice annotations moved, e.g. `@WebMvcTest` is `org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest`.
-- Controller tests use `MockMvcTester` (AssertJ style), see `HelloControllerTest`.
+- Controller and service are tested separately. Controller tests use `@WebMvcTest` + `MockMvcTester` (AssertJ style) with the service replaced by `@MockitoBean` (see `HelloControllerTest`); service tests are plain unit tests without a Spring context (see `HelloServiceTest`).
 
 ## Project conventions
 
@@ -42,4 +42,5 @@ Boot 4 split the starters into modules; older names/packages from Boot 3 do not 
 - Don't use `var`; always declare explicit types.
 - Name variables, fields and parameters after what they are or do (`mockMvcTester`, not `mvc`). Only conventional short names like `i` in a `for` loop are fine.
 - `.gitignore` / `.gitattributes`: a line earns its place only if it's actually required now, i.e. the matching files exist in this repo (no `.idea/` entry without `.idea/` files, no `*.jar` rule without jars). Add entries when such files appear; remove them when they're gone.
+- Controllers are a thin layer: consume the request and delegate to the controller's own service (`HelloController` → `HelloService`). Every handler method returns `ResponseEntity<T>`, using `ResponseEntity<Void>` when there is no body. Services return plain `T` and never `ResponseEntity`.
 - Spring configuration is YAML (`application.yaml`), never `.properties` files.
