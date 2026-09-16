@@ -13,6 +13,11 @@ Always use the Maven wrapper (`./mvnw`), not a system `mvn`.
 - Format code: `./mvnw spotless:apply` (Palantir Java Format); `verify` fails on unformatted code via `spotless:check`
 - Single test: `./mvnw test -Dtest=HelloControllerTest` or `-Dtest=HelloControllerTest#hello`
 
+## Git workflow
+
+- `main` is protected: never push to it directly. Every change goes on a branch and through a pull request (`gh pr create`).
+- Never merge a pull request yourself. Only the user merges; if merging seems needed, ask for permission first.
+
 ## Stack
 
 - Java 25, set via `java.version` in `pom.xml` (the Spring Boot parent maps it to the compiler release).
@@ -38,3 +43,4 @@ Boot 4 split the starters into modules; older names/packages from Boot 3 do not 
 - Name variables, fields and parameters after what they are or do (`mockMvcTester`, not `mvc`). Only conventional short names like `i` in a `for` loop are fine.
 - `.gitignore` / `.gitattributes`: a line earns its place only if it's actually required now, i.e. the matching files exist in this repo (no `.idea/` entry without `.idea/` files, no `*.jar` rule without jars). Add entries when such files appear; remove them when they're gone.
 - Controllers are a thin layer: consume the request and delegate to the controller's own service (`HelloController` → `HelloService`). Every handler method returns `ResponseEntity<T>`, using `ResponseEntity<Void>` when there is no body. Services return plain `T` and never `ResponseEntity`.
+- Spring configuration is YAML (`application.yaml`), never `.properties` files.
