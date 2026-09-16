@@ -1,0 +1,9 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: projector
+      POSTGRES_USER: projector
+      POSTGRES_PASSWORD: projector
+    ports:
+      - "5432"

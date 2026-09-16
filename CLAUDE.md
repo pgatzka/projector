@@ -12,6 +12,8 @@ Always use the Maven wrapper (`./mvnw`), not a system `mvn`.
 - Tests + coverage gate + format check: `./mvnw verify` (JaCoCo report at `target/site/jacoco/index.html`)
 - Format code: `./mvnw spotless:apply` (Palantir Java Format); `verify` fails on unformatted code via `spotless:check`
 - Single test: `./mvnw test -Dtest=HelloControllerTest` or `-Dtest=HelloControllerTest#hello`
+- Build and run both need Docker: the build starts a throwaway Postgres for codegen, `spring-boot:run` starts `compose.yaml` via Spring Boot Docker Compose support.
+- A failed codegen leaves the `projector-codegen-postgres` container running and the next build fails with a name conflict: `./mvnw docker:stop` removes it.
 
 ## Git workflow
 
@@ -26,6 +28,8 @@ Always use the Maven wrapper (`./mvnw`), not a system `mvn`.
 - JaCoCo: `check` fails `verify` below 80% line and branch coverage (bundle-wide). `ProjectorApplication` is excluded from coverage.
 - Surefire loads Mockito as a `-javaagent` (per Mockito docs, JDK 21+ restricts self-attach), resolved via `maven-dependency-plugin:properties`. Its `argLine` starts with `@{argLine}` so JaCoCo's agent is kept; the empty `<argLine/>` property keeps it valid when JaCoCo is skipped.
 - Test logging: `src/test/resources/logback-test.xml` sends all logs to `target/test.log` (overwritten each run), not the console. Check that file when debugging test failures.
+- Database: PostgreSQL 18 (`postgres:18-alpine`), Flyway migrations in `src/main/resources/db/migration`, jOOQ for queries. jOOQ, Flyway and the PostgreSQL driver versions are Boot-managed.
+- jOOQ codegen runs in `generate-sources`: `docker-maven-plugin` starts Postgres on a random port (`${codegen.postgres.port}`), `flyway-maven-plugin` migrates it, `jooq-codegen-maven` generates `io.github.pgatzka.projector.jooq` into `target/generated-sources/jooq` (never committed, excluded from JaCoCo), and the container is stopped in `process-sources`. The three plugins share the `generate-sources` phase, so their order in `pom.xml` matters.
 - Maven coordinates `io.github.pgatzka:projector`; base package `io.github.pgatzka.projector`.
 
 ## Spring Boot 4 specifics

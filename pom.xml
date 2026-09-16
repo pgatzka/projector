@@ -20,6 +20,7 @@
         <jacoco.version>0.8.15</jacoco.version>
         <spotless.version>3.10.2</spotless.version>
         <palantir-java-format.version>2.98.0</palantir-java-format.version>
+        <docker-maven-plugin.version>0.49.0</docker-maven-plugin.version>
         <!-- filled by jacoco:prepare-agent; must exist for surefire's @{argLine} -->
         <argLine/>
     </properties>
@@ -36,6 +37,28 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jooq</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-flyway</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-docker-compose</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc-test</artifactId>
             <scope>test</scope>
         </dependency>
@@ -43,6 +66,125 @@
 
     <build>
         <plugins>
+            <!-- codegen: start a throwaway Postgres, apply Flyway migrations, generate jOOQ classes, stop it.
+                 Same-phase plugins run in declaration order. -->
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>${docker-maven-plugin.version}</version>
+                <configuration>
+                    <removeVolumes>true</removeVolumes>
+                    <images>
+                        <image>
+                            <name>postgres:18-alpine</name>
+                            <alias>codegen-postgres</alias>
+                            <run>
+                                <!-- fixed name: a failed build leaves it running, `./mvnw docker:stop` removes it -->
+                                <containerNamePattern>projector-codegen-postgres</containerNamePattern>
+                                <env>
+                                    <POSTGRES_DB>projector</POSTGRES_DB>
+                                    <POSTGRES_USER>projector</POSTGRES_USER>
+                                    <POSTGRES_PASSWORD>projector</POSTGRES_PASSWORD>
+                                </env>
+                                <ports>
+                                    <!-- random free host port, stored in ${codegen.postgres.port} -->
+                                    <port>codegen.postgres.port:5432</port>
+                                </ports>
+                                <wait>
+                                    <!-- the init script runs a temporary server first; the second line is the real one -->
+                                    <log>(?s)ready to accept connections.*ready to accept connections</log>
+                                    <time>60000</time>
+                                </wait>
+                            </run>
+                        </image>
+                    </images>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>start-codegen-postgres</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>start</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>stop-codegen-postgres</id>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <version>${flyway.version}</version>
+                <configuration>
+                    <url>jdbc:postgresql://localhost:${codegen.postgres.port}/projector</url>
+                    <user>projector</user>
+                    <password>projector</password>
+                    <locations>
+                        <location>filesystem:src/main/resources/db/migration</location>
+                    </locations>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.flywaydb</groupId>
+                        <artifactId>flyway-database-postgresql</artifactId>
+                        <version>${flyway.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.postgresql</groupId>
+                        <artifactId>postgresql</artifactId>
+                        <version>${postgresql.version}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>migrate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.jooq</groupId>
+                <artifactId>jooq-codegen-maven</artifactId>
+                <version>${jooq.version}</version>
+                <configuration>
+                    <jdbc>
+                        <url>jdbc:postgresql://localhost:${codegen.postgres.port}/projector</url>
+                        <user>projector</user>
+                        <password>projector</password>
+                    </jdbc>
+                    <generator>
+                        <database>
+                            <inputSchema>public</inputSchema>
+                            <excludes>flyway_schema_history</excludes>
+                        </database>
+                        <target>
+                            <packageName>io.github.pgatzka.projector.jooq</packageName>
+                        </target>
+                    </generator>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.postgresql</groupId>
+                        <artifactId>postgresql</artifactId>
+                        <version>${postgresql.version}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -82,6 +224,7 @@
                 <configuration>
                     <excludes>
                         <exclude>io/github/pgatzka/projector/ProjectorApplication.class</exclude>
+                        <exclude>io/github/pgatzka/projector/jooq/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>
