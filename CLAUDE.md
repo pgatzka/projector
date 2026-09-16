@@ -37,3 +37,4 @@ Boot 4 split the starters into modules; older names/packages from Boot 3 do not 
 - Don't use `var`; always declare explicit types.
 - Name variables, fields and parameters after what they are or do (`mockMvcTester`, not `mvc`). Only conventional short names like `i` in a `for` loop are fine.
 - `.gitignore` / `.gitattributes`: a line earns its place only if it's actually required now, i.e. the matching files exist in this repo (no `.idea/` entry without `.idea/` files, no `*.jar` rule without jars). Add entries when such files appear; remove them when they're gone.
+- Controllers are a thin layer: consume the request and delegate to the controller's own service (`HelloController` → `HelloService`). Every handler method returns `ResponseEntity<T>`, using `ResponseEntity<Void>` when there is no body. Services return plain `T` and never `ResponseEntity`.
