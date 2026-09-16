@@ -12,6 +12,7 @@ Always use the Maven wrapper (`./mvnw`), not a system `mvn`.
 - Tests + coverage gate + format check: `./mvnw verify` (JaCoCo report at `target/site/jacoco/index.html`)
 - Format code: `./mvnw spotless:apply` (Palantir Java Format); `verify` fails on unformatted code via `spotless:check`
 - Single test: `./mvnw test -Dtest=HelloControllerTest` or `-Dtest=HelloControllerTest#hello`
+- Frontend dev server: `npm start` in `frontend/` (`localhost:4200`, proxies backend paths listed in `frontend/proxy.conf.json` to `:8080`; add new API paths there). Frontend tests alone: `npm test` in `frontend/`.
 
 ## Git workflow
 
@@ -26,6 +27,7 @@ Always use the Maven wrapper (`./mvnw`), not a system `mvn`.
 - JaCoCo: `check` fails `verify` below 80% line and branch coverage (bundle-wide). `ProjectorApplication` is excluded from coverage.
 - Surefire loads Mockito as a `-javaagent` (per Mockito docs, JDK 21+ restricts self-attach), resolved via `maven-dependency-plugin:properties`. Its `argLine` starts with `@{argLine}` so JaCoCo's agent is kept; the empty `<argLine/>` property keeps it valid when JaCoCo is skipped.
 - Test logging: `src/test/resources/logback-test.xml` sends all logs to `target/test.log` (overwritten each run), not the console. Check that file when debugging test failures.
+- Frontend: Angular 22 in `frontend/` (standalone, zoneless, Vitest). `frontend-maven-plugin` installs Node (`node.version` in `pom.xml`) into `target/`, runs `npm ci` + `npm run build` in `generate-resources` and `npm test` in `test` (skipped by `-DskipTests`). `angular.json` builds straight into `target/classes/static`, so Spring Boot serves the app at `/`.
 - Maven coordinates `io.github.pgatzka:projector`; base package `io.github.pgatzka.projector`.
 
 ## Spring Boot 4 specifics
